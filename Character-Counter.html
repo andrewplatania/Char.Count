@@ -1,0 +1,671 @@
+<!-- Character counter, count how many characters your project is. Quick little 2 hour long project for curious ppl i guess. -->
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>char.count</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#08090a;
+  --grid:#0d1117;
+  --surface:#0f1117;
+  --surface2:#161b24;
+  --border:#1e2633;
+  --border-hi:#2a3545;
+  --accent:#00e5ff;
+  --accent2:#7fff6e;
+  --accent3:#ff6b6b;
+  --text:#c9d1d9;
+  --text-hi:#f0f6fc;
+  --muted:#4a5568;
+  --mono:'Space Mono',monospace;
+  --display:'Syne',sans-serif;
+}
+
+html,body{height:100%;overflow-x:hidden}
+
+body{
+  font-family:var(--mono);
+  font-size:13px;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  position:relative;
+}
+
+/* ── grid background ── */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── scanline overlay ── */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events:none;
+  z-index:1;
+}
+
+.shell{
+  position:relative;
+  z-index:2;
+  max-width:800px;
+  margin:0 auto;
+  padding:3rem 2rem 6rem;
+}
+
+/* ── header ── */
+.header{margin-bottom:3rem}
+.header-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:1rem;
+}
+.logo{
+  font-family:var(--display);
+  font-size:clamp(2.5rem, 8vw, 4.5rem);
+  font-weight:800;
+  line-height:0.9;
+  letter-spacing:-0.04em;
+  color:var(--text-hi);
+  position:relative;
+}
+.logo .dot{color:var(--accent)}
+.logo .count{
+  display:block;
+  font-size:0.42em;
+  font-weight:400;
+  color:var(--accent);
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  margin-top:4px;
+  font-family:var(--mono);
+}
+
+.badge{
+  font-size:10px;
+  font-family:var(--mono);
+  color:var(--accent);
+  border:1px solid var(--accent);
+  padding:4px 10px;
+  border-radius:2px;
+  letter-spacing:0.1em;
+  opacity:0.7;
+  margin-top:8px;
+  animation:blink-border 3s ease-in-out infinite;
+}
+@keyframes blink-border{0%,100%{opacity:0.7}50%{opacity:0.3}}
+
+.tagline{
+  font-size:12px;
+  color:var(--muted);
+  letter-spacing:0.08em;
+}
+.tagline::before{content:'// ';color:var(--border-hi)}
+
+/* ── terminal prompt line ── */
+.prompt-line{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:2rem;
+  padding:14px 18px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  font-size:12px;
+  color:var(--muted);
+}
+.prompt-sym{color:var(--accent2);font-weight:700}
+.prompt-text{color:var(--text)}
+.cursor{
+  display:inline-block;
+  width:8px;height:14px;
+  background:var(--accent);
+  animation:cursor-blink .8s step-end infinite;
+  vertical-align:middle;
+  margin-left:2px;
+}
+@keyframes cursor-blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── upload section ── */
+.upload-section{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:1.5rem;
+}
+.upload-btn{
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  padding:20px 22px;
+  background:var(--surface);
+  border:1px solid var(--border-hi);
+  color:var(--text);
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:12px;
+  transition:border-color .2s, background .2s;
+  text-align:left;
+}
+.upload-btn::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg, rgba(0,229,255,0.04) 0%, transparent 60%);
+  opacity:0;
+  transition:opacity .2s;
+}
+.upload-btn:hover{border-color:var(--accent);background:var(--surface2)}
+.upload-btn:hover::before{opacity:1}
+.upload-btn:hover .btn-arrow{transform:translateX(4px)}
+.upload-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.btn-cmd{font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:2px}
+.btn-label{font-size:13px;font-weight:700;color:var(--text-hi)}
+.btn-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.btn-arrow{
+  position:absolute;right:18px;top:50%;transform:translateY(-50%);
+  color:var(--accent);font-size:18px;
+  transition:transform .2s;
+  pointer-events:none;
+}
+
+/* ── filter ── */
+.filter-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 18px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  margin-bottom:2rem;
+}
+.filter-left{display:flex;align-items:center;gap:12px}
+.filter-label{font-size:11px;color:var(--muted);letter-spacing:0.06em}
+
+.switch{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{
+  position:absolute;inset:0;
+  background:var(--border-hi);
+  cursor:pointer;
+  border-radius:2px;
+  transition:background .2s;
+}
+.slider::after{
+  content:'';position:absolute;
+  left:3px;top:3px;width:14px;height:14px;
+  background:var(--muted);
+  border-radius:1px;
+  transition:transform .2s, background .2s;
+}
+.switch input:checked+.slider{background:rgba(0,229,255,0.15);border:1px solid var(--accent)}
+.switch input:checked+.slider::after{transform:translateX(16px);background:var(--accent)}
+
+.filter-note{font-size:10px;color:var(--muted);letter-spacing:0.04em}
+
+/* ── results ── */
+#results{display:none}
+
+/* ── stats ── */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--border);
+  border:1px solid var(--border);
+  margin-bottom:2rem;
+  overflow:hidden;
+}
+.stat{
+  background:var(--surface);
+  padding:20px 18px;
+  position:relative;
+  overflow:hidden;
+}
+.stat::after{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:var(--accent);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .6s ease;
+}
+.stat.lit::after{transform:scaleX(1)}
+.stat-idx{
+  font-size:9px;color:var(--muted);
+  letter-spacing:0.15em;
+  margin-bottom:8px;
+  display:block;
+}
+.stat-val{
+  font-family:var(--display);
+  font-size:1.8rem;
+  font-weight:800;
+  color:var(--text-hi);
+  line-height:1;
+  word-break:break-all;
+  letter-spacing:-0.02em;
+  transition:color .3s;
+}
+.stat-val.cyan{color:var(--accent)}
+.stat-val.green{color:var(--accent2)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:0.06em;text-transform:uppercase}
+
+/* ── progress ── */
+.prog-outer{
+  margin-bottom:1rem;
+  display:none;
+}
+.prog-track{
+  height:1px;
+  background:var(--border);
+  position:relative;
+  overflow:hidden;
+}
+.prog-fill{
+  height:100%;
+  background:var(--accent);
+  width:0%;
+  transition:width .15s;
+  box-shadow:0 0 8px var(--accent);
+}
+.prog-glow{
+  position:absolute;
+  top:-4px;
+  width:60px;
+  height:9px;
+  background:radial-gradient(ellipse, rgba(0,229,255,0.4) 0%, transparent 70%);
+  transition:left .15s;
+  left:0%;
+}
+.status{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:6px;
+  min-height:16px;
+  letter-spacing:0.04em;
+}
+.status::before{content:'> ';color:var(--accent2)}
+
+/* ── file table ── */
+.table-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+.table-title{
+  font-size:10px;
+  color:var(--accent);
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+}
+.table-controls{display:flex;gap:8px;align-items:center}
+
+.sort-select{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--text);
+  background:var(--surface);
+  border:1px solid var(--border-hi);
+  padding:4px 10px;
+  cursor:pointer;
+  outline:none;
+  letter-spacing:0.05em;
+}
+.sort-select:focus{border-color:var(--accent)}
+
+.clr{
+  font-family:var(--mono);font-size:10px;
+  color:var(--muted);background:none;
+  border:1px solid var(--border);
+  padding:4px 12px;cursor:pointer;
+  letter-spacing:0.08em;
+  transition:color .1s,border-color .1s;
+}
+.clr:hover{color:var(--accent3);border-color:var(--accent3)}
+
+.file-table{
+  border:1px solid var(--border);
+  overflow:hidden;
+  max-height:420px;
+  overflow-y:auto;
+}
+.file-table::-webkit-scrollbar{width:3px}
+.file-table::-webkit-scrollbar-track{background:var(--surface)}
+.file-table::-webkit-scrollbar-thumb{background:var(--border-hi)}
+
+.col-head{
+  display:grid;
+  grid-template-columns:1fr 90px 90px;
+  padding:8px 14px;
+  background:var(--grid);
+  border-bottom:1px solid var(--border);
+  font-size:9px;
+  color:var(--muted);
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  position:sticky;top:0;z-index:1;
+}
+
+.file-row{
+  display:grid;
+  grid-template-columns:1fr 90px 90px;
+  padding:9px 14px;
+  border-bottom:1px solid var(--border);
+  align-items:center;
+  transition:background .1s;
+  animation:row-in .25s ease both;
+}
+@keyframes row-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.file-row:last-child{border-bottom:none}
+.file-row:hover{background:var(--surface2)}
+
+.fp{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;padding-right:12px}
+.fp .dir{color:var(--muted)}
+.fp .nm{color:var(--text-hi)}
+.fch{font-size:11px;color:var(--accent);text-align:right;font-weight:700}
+.fln{font-size:11px;color:var(--accent2);text-align:right}
+.fsk{font-size:10px;color:var(--muted);font-style:italic;grid-column:2/-1;text-align:right}
+
+.empty{
+  padding:3rem;text-align:center;
+  color:var(--muted);font-size:12px;
+  letter-spacing:0.06em;
+}
+.empty::before{display:block;font-size:24px;margin-bottom:10px;content:'[ ]';color:var(--border-hi)}
+
+/* ── entry animation ── */
+@keyframes fade-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.shell>*{animation:fade-up .5s ease both}
+.header{animation-delay:.05s}
+.prompt-line{animation-delay:.15s}
+.upload-section{animation-delay:.22s}
+.filter-bar{animation-delay:.28s}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">
+        char<span class="dot">.</span>count
+        <span class="count">v1.2.4</span>
+      </div>
+      <div class="badge">OPEN SOURCE</div>
+    </div>
+    <p class="tagline">count every character and line across your entire codebase</p>
+  </div>
+
+  <!-- terminal prompt -->
+  <div class="prompt-line">
+    <span class="prompt-sym">$</span>
+    <span class="prompt-text" id="prompt-text">select files or a folder to begin analysis</span>
+    <span class="cursor"></span>
+  </div>
+
+  <!-- upload -->
+  <div class="upload-section">
+    <label class="upload-btn">
+      <span class="btn-cmd">CMD_01</span>
+      <span class="btn-label">Add Files</span>
+      <span class="btn-sub">Select individual files</span>
+      <span class="btn-arrow">→</span>
+      <input type="file" id="file-input" multiple/>
+    </label>
+    <label class="upload-btn">
+      <span class="btn-cmd">CMD_02</span>
+      <span class="btn-label">Add Folder</span>
+      <span class="btn-sub">Scan entire directory tree</span>
+      <span class="btn-arrow">→</span>
+      <input type="file" id="folder-input" webkitdirectory multiple/>
+    </label>
+  </div>
+
+  <!-- filter -->
+  <div class="filter-bar">
+    <div class="filter-left">
+      <label class="switch">
+        <input type="checkbox" id="skip-toggle" checked/>
+        <span class="slider"></span>
+      </label>
+      <span class="filter-label">Skip generated &amp; dependency files</span>
+    </div>
+    <span class="filter-note">node_modules · .git · dist · build · __pycache__ · venv</span>
+  </div>
+
+  <!-- results -->
+  <div id="results">
+
+    <div class="stats">
+      <div class="stat" id="stat-0">
+        <span class="stat-idx">01 / CHARS</span>
+        <div class="stat-val cyan" id="s-chars">0</div>
+        <div class="stat-lbl">Total characters</div>
+      </div>
+      <div class="stat" id="stat-1">
+        <span class="stat-idx">02 / LINES</span>
+        <div class="stat-val green" id="s-lines">0</div>
+        <div class="stat-lbl">Total lines</div>
+      </div>
+      <div class="stat" id="stat-2">
+        <span class="stat-idx">03 / READ</span>
+        <div class="stat-val" id="s-files">0</div>
+        <div class="stat-lbl">Files counted</div>
+      </div>
+      <div class="stat" id="stat-3">
+        <span class="stat-idx">04 / SKIP</span>
+        <div class="stat-val" id="s-skip">0</div>
+        <div class="stat-lbl">Files skipped</div>
+      </div>
+    </div>
+
+    <div class="prog-outer" id="prog-outer">
+      <div class="prog-track">
+        <div class="prog-fill" id="prog-fill"></div>
+        <div class="prog-glow" id="prog-glow"></div>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="table-header">
+      <span class="table-title">// file breakdown</span>
+      <div class="table-controls">
+        <select class="sort-select" id="sort-sel">
+          <option value="chars">↓ characters</option>
+          <option value="lines">↓ lines</option>
+          <option value="name">↑ filename</option>
+        </select>
+        <button class="clr" id="clr-btn">[ clear ]</button>
+      </div>
+    </div>
+
+    <div class="file-table">
+      <div class="col-head">
+        <span>path</span>
+        <span style="text-align:right">chars</span>
+        <span style="text-align:right">lines</span>
+      </div>
+      <div id="file-list"><div class="empty">no data</div></div>
+    </div>
+
+  </div><!-- /results -->
+</div><!-- /shell -->
+
+<script>
+const TEXT_EXTS=new Set(['txt','md','markdown','csv','tsv','json','jsonl','xml','yaml','yml','html','htm','css','js','mjs','cjs','ts','jsx','tsx','py','rb','java','cs','go','rs','swift','kt','kts','sh','bash','zsh','fish','ps1','bat','cmd','sql','graphql','gql','toml','ini','cfg','conf','env','log','gitignore','editorconfig','htaccess','rtf','tex','bib','srt','vtt','svg','vue','svelte','astro','liquid','njk','hbs','ejs','php','pl','r','dart','lua','ex','exs','erl','clj','cljs','hs','elm','nim','zig','tf','hcl','proto','dockerfile','makefile','cmake','gradle','rss','atom']);
+const BINARY_EXTS=new Set(['png','jpg','jpeg','gif','bmp','ico','webp','tiff','tif','heic','heif','mp4','mp3','wav','ogg','flac','aac','m4a','mkv','avi','mov','wmv','webm','pdf','doc','docx','xls','xlsx','ppt','pptx','odt','zip','tar','gz','bz2','7z','rar','dmg','iso','deb','rpm','exe','dll','so','dylib','app','apk','ipa','ttf','otf','woff','woff2','eot','psd','ai','eps','sketch','fig','db','sqlite','mdb','bin','dat','wasm','pyc','class','o','obj','a','lib','node','snap']);
+const SKIP_DIRS=new Set(['node_modules','.git','.svn','.hg','dist','build','out','output','.next','.nuxt','.cache','.parcel-cache','__pycache__','.pytest_cache','.mypy_cache','venv','.venv','env','vendor','bower_components','.yarn','coverage','.nyc_output','target','pkg','Pods','DerivedData','.gradle']);
+const MAX_BYTES=500_000;
+
+let fileResults=[];
+
+const fmt=n=>Number(n).toLocaleString();
+const getExt=n=>{const d=n.lastIndexOf('.');return d>=0?n.slice(d+1).toLowerCase():''};
+const isBinary=n=>{const e=getExt(n);return BINARY_EXTS.has(e)?true:TEXT_EXTS.has(e)?false:false};
+const countLines=t=>{let n=1;for(let i=0;i<t.length;i++)if(t[i]==='\n')n++;return n};
+const readText=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej();r.readAsText(f,'utf-8')});
+
+function shouldSkip(path){
+  const parts=path.replace(/\\/g,'/').split('/');
+  for(const p of parts){
+    if(SKIP_DIRS.has(p)||SKIP_DIRS.has(p.toLowerCase())) return 'dependency/generated';
+    if(p.startsWith('.')&&p.length>1&&parts.indexOf(p)>0) return 'hidden dir';
+  }
+  return null;
+}
+
+// animated number counter
+function animateNum(el, target, duration=600){
+  const start=parseInt(el.textContent.replace(/,/g,''))||0;
+  const range=target-start;
+  const startTime=performance.now();
+  function step(now){
+    const p=Math.min((now-startTime)/duration,1);
+    const ease=1-Math.pow(1-p,3);
+    el.textContent=fmt(Math.round(start+range*ease));
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function updateStats(){
+  const read=fileResults.filter(f=>!f.skipped);
+  const skip=fileResults.filter(f=>f.skipped);
+  animateNum(document.getElementById('s-chars'),read.reduce((s,f)=>s+f.chars,0));
+  animateNum(document.getElementById('s-lines'),read.reduce((s,f)=>s+f.lines,0));
+  animateNum(document.getElementById('s-files'),read.length);
+  animateNum(document.getElementById('s-skip'),skip.length);
+  // light up stat bars
+  ['stat-0','stat-1','stat-2','stat-3'].forEach((id,i)=>{
+    setTimeout(()=>document.getElementById(id).classList.add('lit'),i*80);
+  });
+}
+
+function renderList(){
+  const sort=document.getElementById('sort-sel').value;
+  const list=document.getElementById('file-list');
+  if(!fileResults.length){list.innerHTML='<div class="empty">no data</div>';return;}
+  const sorted=[...fileResults].sort((a,b)=>{
+    if(sort==='chars') return (b.chars||0)-(a.chars||0);
+    if(sort==='lines') return (b.lines||0)-(a.lines||0);
+    return a.name<b.name?-1:1;
+  });
+  list.innerHTML=sorted.map((f,i)=>{
+    const parts=f.name.split('/');
+    const fname=parts.pop();
+    const dir=parts.length?parts.join('/')+'/':'';
+    if(f.skipped)
+      return `<div class="file-row" style="animation-delay:${Math.min(i,30)*12}ms"><span class="fp"><span class="dir">${dir}</span><span class="nm">${fname}</span></span><span class="fsk">${f.reason}</span></div>`;
+    return `<div class="file-row" style="animation-delay:${Math.min(i,30)*12}ms"><span class="fp"><span class="dir">${dir}</span><span class="nm">${fname}</span></span><span class="fch">${fmt(f.chars)}</span><span class="fln">${fmt(f.lines)}</span></div>`;
+  }).join('');
+}
+
+function setPrompt(txt){
+  document.getElementById('prompt-text').textContent=txt;
+}
+
+function setProgress(pct){
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-glow').style.left=Math.max(0,pct-4)+'%';
+}
+
+async function processFiles(files){
+  if(!files.length) return;
+  const filterOn=document.getElementById('skip-toggle').checked;
+  document.getElementById('results').style.display='block';
+  document.getElementById('prog-outer').style.display='block';
+  setProgress(0);
+
+  for(let i=0;i<files.length;i++){
+    const f=files[i];
+    const pct=((i+1)/files.length*100);
+    setProgress(pct);
+    const path=(f.webkitRelativePath||f.name).replace(/\\/g,'/');
+    const fname=path.split('/').pop();
+    document.getElementById('status').textContent=`[${i+1}/${files.length}] ${fname}`;
+    setPrompt(`scanning: ${fname}`);
+
+    if(filterOn){
+      const skipReason=shouldSkip(path);
+      if(skipReason){fileResults.push({name:path,chars:0,lines:0,skipped:true,reason:skipReason});if(i%30===0){updateStats();renderList();}continue;}
+      if(f.size>MAX_BYTES){fileResults.push({name:path,chars:0,lines:0,skipped:true,reason:`large (${Math.round(f.size/1024)}KB)`});if(i%30===0){updateStats();renderList();}continue;}
+    }
+    if(isBinary(fname)){fileResults.push({name:path,chars:0,lines:0,skipped:true,reason:'binary'});if(i%30===0){updateStats();renderList();}continue;}
+
+    try{
+      const text=await readText(f);
+      fileResults.push({name:path,chars:text.length,lines:countLines(text),skipped:false});
+    }catch(e){
+      fileResults.push({name:path,chars:0,lines:0,skipped:true,reason:'read error'});
+    }
+    if(i%10===0||i===files.length-1){updateStats();renderList();}
+  }
+
+  setProgress(100);
+  setTimeout(()=>document.getElementById('prog-outer').style.display='none',600);
+  const n=fileResults.filter(f=>!f.skipped).length;
+  document.getElementById('status').textContent=`analysis complete — ${n} file${n!==1?'s':''} counted`;
+  setPrompt(`done. ${n} file${n!==1?'s':''} analyzed.`);
+  updateStats();
+  renderList();
+}
+
+document.getElementById('sort-sel').addEventListener('change',renderList);
+
+document.getElementById('file-input').addEventListener('change',async e=>{
+  const files=Array.from(e.target.files||[]);
+  if(files.length) await processFiles(files);
+  e.target.value='';
+});
+document.getElementById('folder-input').addEventListener('change',async e=>{
+  const files=Array.from(e.target.files||[]);
+  if(files.length) await processFiles(files);
+  e.target.value='';
+});
+
+document.getElementById('clr-btn').addEventListener('click',()=>{
+  fileResults=[];
+  ['stat-0','stat-1','stat-2','stat-3'].forEach(id=>document.getElementById(id).classList.remove('lit'));
+  document.getElementById('results').style.display='none';
+  document.getElementById('status').textContent='';
+  setPrompt('select files or a folder to begin analysis');
+});
+</script>
+</body>
+</html>
