@@ -594,6 +594,7 @@ body::after{
     <textarea class="modal-textarea" id="quick-input" placeholder="type characters here..."></textarea>
     <div class="modal-stat">
       <div><span class="modal-stat-val" id="quick-char-count">0</span> characters</div>
+      <div style="margin-left:20px"><span class="modal-stat-val" id="quick-word-count">0</span> words</div>
     </div>
   </div>
 </div>
@@ -794,12 +795,16 @@ document.getElementById('clr-btn').addEventListener('click',()=>{
 
 const quickInput=document.getElementById('quick-input');
 const quickCharCount=document.getElementById('quick-char-count');
+const quickWordCount=document.getElementById('quick-word-count');
 const quickBtn=document.getElementById('quick-btn');
 const quickModal=document.getElementById('quick-modal');
 const modalClose=document.getElementById('modal-close');
 
 function updateQuickCount(){
-  quickCharCount.textContent=fmt(quickInput.value.length);
+  const text=quickInput.value;
+  quickCharCount.textContent=fmt(text.length);
+  const words=text.trim()?text.trim().split(/\s+/).filter(w=>/[a-z]/i.test(w)).length:0;
+  quickWordCount.textContent=fmt(words);
 }
 
 quickInput.addEventListener('input',updateQuickCount);
